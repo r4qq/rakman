@@ -29,7 +29,12 @@ bool ReqManager::sendGet(const std::string &url)
 
     auto response = curl_easy_perform(_handle);
 
-    if (response) {return false;}
+    if (response != CURLE_OK) 
+    {
+        std::cerr << curl_easy_strerror(response) << std::endl;
+        return false; 
+    }
+
     return true;
 }
 
@@ -43,8 +48,11 @@ bool ReqManager::sendPost(const std::string &url, const std::string &data)
     struct curl_slist *headers = NULL;
     headers = curl_slist_append(headers, "Content-Type: application/json");
 
+    curl_easy_reset(_handle);
+
     curl_easy_setopt(_handle, CURLOPT_URL, url.c_str());
     curl_easy_setopt(_handle, CURLOPT_POSTFIELDS, data.c_str());
+    curl_easy_setopt(_handle, CURLOPT_WRITEFUNCTION, WriteCallback);
     curl_easy_setopt(_handle, CURLOPT_WRITEDATA, &_responseBody);
     curl_easy_setopt(_handle, CURLOPT_HTTPHEADER, headers);
 
