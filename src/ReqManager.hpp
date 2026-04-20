@@ -19,6 +19,7 @@ class ReqManager
 
         bool sendGet(const std::string &url);
         bool sendPost(const std::string &url, const std::string &data);
+        bool sendDelete(const std::string &url);
         const std::string& getResponseBody() const;
         void cleanResponseBody();
 };

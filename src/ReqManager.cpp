@@ -48,10 +48,10 @@ bool ReqManager::sendPost(const std::string &url, const std::string &data)
         return false; 
     }
 
+    curl_easy_reset(this->_handle);
+
     struct curl_slist *headers = NULL;
     headers = curl_slist_append(headers, "Content-Type: application/json");
-
-    curl_easy_reset(this->_handle);
 
     curl_easy_setopt(this->_handle, CURLOPT_URL, url.c_str());
     curl_easy_setopt(this->_handle, CURLOPT_POSTFIELDS, data.c_str());
@@ -65,6 +65,36 @@ bool ReqManager::sendPost(const std::string &url, const std::string &data)
     
     if (response != CURLE_OK) 
     {
+        std::cerr << curl_easy_strerror(response) << std::endl;
+        return false; 
+    }
+
+    return true;
+}
+
+bool ReqManager::sendDelete(const std::string &url)
+{
+    if (!this->_handle) 
+    {
+        return false;
+    }
+
+    curl_easy_reset(this->_handle);
+
+    struct curl_slist *headers = NULL;
+    headers = curl_slist_append(headers, "Content-Type: application/json");
+
+    curl_easy_setopt(this->_handle, CURLOPT_URL, url.c_str());
+    curl_easy_setopt(this->_handle, CURLOPT_CUSTOMREQUEST , "DELETE");
+    curl_easy_setopt(this->_handle, CURLOPT_WRITEFUNCTION, WriteCallback);
+    curl_easy_setopt(this->_handle, CURLOPT_WRITEDATA, &_responseBody);
+    curl_easy_setopt(this->_handle, CURLOPT_HTTPHEADER, headers);
+
+    auto response = curl_easy_perform(this->_handle);
+
+    curl_slist_free_all(headers);
+
+    if (response != CURLE_OK) {
         std::cerr << curl_easy_strerror(response) << std::endl;
         return false; 
     }

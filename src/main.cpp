@@ -10,7 +10,8 @@ void printMenu()
     std::cout << "\n=== RAKMAN CLI ===" << std::endl;
     std::cout << "1. Send GET Request" << std::endl;
     std::cout << "2. Send POST Request" << std::endl;
-    std::cout << "3. Exit" << std::endl;
+    std::cout << "3. Send DELETE Request" << std::endl;
+    std::cout << "4. Exit" << std::endl;
     std::cout << "Select option: ";
 }
 
@@ -36,7 +37,7 @@ int main()
         //buff clean
         std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 
-        if (choice == 3) {
+        if (choice == 4) {
             std::cout << "Exiting..." << std::endl;
             break;
         }
@@ -76,17 +77,31 @@ int main()
             case 2: { // POST
                 std::cout << "Enter URL: ";
                 std::getline(std::cin, url);
-                if (url.empty()) url = "https://jsonplaceholder.typicode.com/posts";
-                std::cout << "enter json: ";
+                if (url.empty()) {
+                    std::cerr << "empty url";
+                    break;
+                }
+                std::cout << "Enter json: ";
                 std::getline(std::cin, body);
                 if (!nlohmann::json::accept(body)) {
-                    std::cerr << "json invalid" << std::endl;
+                    std::cerr << "Json invalid" << std::endl;
                     break;
                 }
                 std::cout << "Sending POST..." << std::endl;
                 manager.sendPost(url, body);   
                 std::cout << "Response: " << manager.getResponseBody() << std::endl;
                 break;
+            }
+            case 3: {
+                std::cout << "Enter url: ";
+                std::getline(std::cin, url);
+                if (url.empty()) {
+                    std::cerr << "empty url";
+                    break;
+                }
+                std::cout << "Sending DELETE..." << std::endl;
+                manager.sendDelete(url);
+                std::cout << "Response: " << manager.getResponseBody() << std::endl;
             }
             default:
                 std::cout << "Unknown option." << std::endl;
