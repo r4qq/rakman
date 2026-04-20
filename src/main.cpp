@@ -1,11 +1,11 @@
-#include <nlohmann/json.hpp>
 #include <iostream>
+#include <limits>
+#include <nlohmann/json.hpp>
 #include <string>
-#include <limits> 
 
 #include "ReqManager.hpp"
 
-void printMenu() 
+void printMenu()
 {
     std::cout << "\n=== RAKMAN CLI ===" << std::endl;
     std::cout << "1. Send GET Request" << std::endl;
@@ -17,24 +17,22 @@ void printMenu()
 
 int main()
 {
-    ReqManager manager;
-    int choice = 0;
+    ReqManager  manager;
+    int         choice = 0;
     std::string url;
     std::string body;
 
-    while (true) 
-    {
+    while (true) {
         printMenu();
-        
-        if (!(std::cin >> choice))
-        {
+
+        if (!(std::cin >> choice)) {
             std::cout << "Invalid input. Please enter a number." << std::endl;
             std::cin.clear();
             std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
             continue;
         }
 
-        //buff clean
+        // buff clean
         std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 
         if (choice == 4) {
@@ -42,70 +40,63 @@ int main()
             break;
         }
 
-        switch (choice) 
-        {
-            case 1: 
-            { // GET
-                std::cout << "Enter URL: ";
-                std::getline(std::cin, url);
+        switch (choice) {
+        case 1: { // GET
+            std::cout << "Enter URL: ";
+            std::getline(std::cin, url);
 
-                if (url.empty()) 
-                {
-                    url = "example.com"; 
-                    std::cout << "Using default: " << url << std::endl;
-                }
+            if (url.empty()) {
+                url = "example.com";
+                std::cout << "Using default: " << url << std::endl;
+            }
 
-                std::cout << "Sending GET..." << std::endl;
-                if (manager.sendGet(url)) 
-                {
-                    try 
-                    {
-                        auto jsonRes = nlohmann::json::parse(manager.getResponseBody());
-                        std::cout << jsonRes.dump(4) << std::endl; // dump(4) = pretty print
-                    }
-                    catch (...) 
-                    {
-                        std::cout << manager.getResponseBody() << std::endl;
-                    }
-                } 
-                else 
-                {
-                    std::cerr << "Request Failed!" << std::endl;
+            std::cout << "Sending GET..." << std::endl;
+            if (manager.sendGet(url)) {
+                try {
+                    auto jsonRes =
+                        nlohmann::json::parse(manager.getResponseBody());
+                    std::cout << jsonRes.dump(4)
+                              << std::endl; // dump(4) = pretty print
+                } catch (...) {
+                    std::cout << manager.getResponseBody() << std::endl;
                 }
+            } else {
+                std::cerr << "Request Failed!" << std::endl;
+            }
+            break;
+        }
+        case 2: { // POST
+            std::cout << "Enter URL: ";
+            std::getline(std::cin, url);
+            if (url.empty()) {
+                std::cerr << "empty url";
                 break;
             }
-            case 2: { // POST
-                std::cout << "Enter URL: ";
-                std::getline(std::cin, url);
-                if (url.empty()) {
-                    std::cerr << "empty url";
-                    break;
-                }
-                std::cout << "Enter json: ";
-                std::getline(std::cin, body);
-                if (!nlohmann::json::accept(body)) {
-                    std::cerr << "Json invalid" << std::endl;
-                    break;
-                }
-                std::cout << "Sending POST..." << std::endl;
-                manager.sendPost(url, body);   
-                std::cout << "Response: " << manager.getResponseBody() << std::endl;
+            std::cout << "Enter json: ";
+            std::getline(std::cin, body);
+            if (!nlohmann::json::accept(body)) {
+                std::cerr << "Json invalid" << std::endl;
                 break;
             }
-            case 3: {
-                std::cout << "Enter url: ";
-                std::getline(std::cin, url);
-                if (url.empty()) {
-                    std::cerr << "empty url";
-                    break;
-                }
-                std::cout << "Sending DELETE..." << std::endl;
-                manager.sendDelete(url);
-                std::cout << "Response: " << manager.getResponseBody() << std::endl;
-            }
-            default:
-                std::cout << "Unknown option." << std::endl;
+            std::cout << "Sending POST..." << std::endl;
+            manager.sendPost(url, body);
+            std::cout << "Response: " << manager.getResponseBody() << std::endl;
+            break;
+        }
+        case 3: {
+            std::cout << "Enter url: ";
+            std::getline(std::cin, url);
+            if (url.empty()) {
+                std::cerr << "empty url";
                 break;
+            }
+            std::cout << "Sending DELETE..." << std::endl;
+            manager.sendDelete(url);
+            std::cout << "Response: " << manager.getResponseBody() << std::endl;
+        }
+        default:
+            std::cout << "Unknown option." << std::endl;
+            break;
         }
         manager.cleanResponseBody();
     }
