@@ -15,6 +15,12 @@ void printMenu()
     std::cout << "Select option: ";
 }
 
+inline void prettyPrint(const std::string &rawRes)
+{
+    auto jsonRes = nlohmann::json::parse(rawRes);
+    std::cout << jsonRes.dump(4) << std::endl;
+}
+
 int main()
 {
     ReqManager  manager;
@@ -24,7 +30,6 @@ int main()
 
     while (true) {
         printMenu();
-
         if (!(std::cin >> choice)) {
             std::cout << "Invalid input. Please enter a number." << std::endl;
             std::cin.clear();
@@ -42,63 +47,61 @@ int main()
 
         switch (choice) {
         case 1: { // GET
+            manager.cleanResponseBody();
             std::cout << "Enter URL: ";
             std::getline(std::cin, url);
-
             if (url.empty()) {
-                url = "example.com";
-                std::cout << "Using default: " << url << std::endl;
+                std::cerr << "Empty Url";
+                break;
             }
-
-            std::cout << "Sending GET..." << std::endl;
-            if (manager.sendGet(url)) {
-                try {
-                    auto jsonRes =
-                        nlohmann::json::parse(manager.getResponseBody());
-                    std::cout << jsonRes.dump(4)
-                              << std::endl; // dump(4) = pretty print
-                } catch (...) {
-                    std::cout << manager.getResponseBody() << std::endl;
-                }
-            } else {
-                std::cerr << "Request Failed!" << std::endl;
+            if (!manager.sendGet(url)) {
+                std::cout << manager.getResponseBody() << std::endl;
+                break;
             }
+            prettyPrint(manager.getResponseBody());
             break;
         }
         case 2: { // POST
+            manager.cleanResponseBody();
             std::cout << "Enter URL: ";
             std::getline(std::cin, url);
             if (url.empty()) {
-                std::cerr << "empty url";
+                std::cerr << "Empty Url";
                 break;
             }
-            std::cout << "Enter json: ";
+            std::cout << "Enter JSON: ";
             std::getline(std::cin, body);
             if (!nlohmann::json::accept(body)) {
-                std::cerr << "Json invalid" << std::endl;
+                std::cerr << "JSON Invalid" << std::endl;
                 break;
             }
-            std::cout << "Sending POST..." << std::endl;
-            manager.sendPost(url, body);
-            std::cout << "Response: " << manager.getResponseBody() << std::endl;
+            if (!manager.sendPost(url, body)) {
+                std::cout << manager.getResponseBody() << std::endl;
+                break;
+            }
+            prettyPrint(manager.getResponseBody());
             break;
         }
         case 3: {
-            std::cout << "Enter url: ";
+            manager.cleanResponseBody();
+            std::cout << "Enter Url: ";
             std::getline(std::cin, url);
             if (url.empty()) {
-                std::cerr << "empty url";
+                std::cerr << "Empty Url";
                 break;
             }
-            std::cout << "Sending DELETE..." << std::endl;
-            manager.sendDelete(url);
-            std::cout << "Response: " << manager.getResponseBody() << std::endl;
+            if (!manager.sendDelete(url)) {
+                std::cout << manager.getResponseBody() << std::endl;
+                break;
+            }
+            prettyPrint(manager.getResponseBody());
+            break;
         }
         default:
+            manager.cleanResponseBody();
             std::cout << "Unknown option." << std::endl;
             break;
         }
-        manager.cleanResponseBody();
     }
     return 0;
 }
