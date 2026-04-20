@@ -9,25 +9,28 @@
 
 ReqManager::ReqManager()
 {
-    _handle = curl_easy_init();
+    this->_handle = curl_easy_init();
 }
 
 ReqManager::~ReqManager() 
 {
-    curl_easy_cleanup(_handle);
+    curl_easy_cleanup(this->_handle);
 }
 
 bool ReqManager::sendGet(const std::string &url)
 {
-    if(!_handle) 
+    if(!this->_handle) 
     { 
         return false;
     }
-    curl_easy_setopt(_handle, CURLOPT_URL, url.c_str());
-    curl_easy_setopt(_handle, CURLOPT_WRITEFUNCTION, WriteCallback);
-    curl_easy_setopt(_handle, CURLOPT_WRITEDATA, &_responseBody);
 
-    auto response = curl_easy_perform(_handle);
+    curl_easy_reset(this->_handle);
+
+    curl_easy_setopt(this->_handle, CURLOPT_URL, url.c_str());
+    curl_easy_setopt(this->_handle, CURLOPT_WRITEFUNCTION, WriteCallback);
+    curl_easy_setopt(this->_handle, CURLOPT_WRITEDATA, &_responseBody);
+
+    auto response = curl_easy_perform(this->_handle);
 
     if (response != CURLE_OK) 
     {
@@ -40,7 +43,7 @@ bool ReqManager::sendGet(const std::string &url)
 
 bool ReqManager::sendPost(const std::string &url, const std::string &data)
 {
-    if(!_handle) 
+    if(!this->_handle) 
     {
         return false; 
     }
@@ -48,17 +51,18 @@ bool ReqManager::sendPost(const std::string &url, const std::string &data)
     struct curl_slist *headers = NULL;
     headers = curl_slist_append(headers, "Content-Type: application/json");
 
-    curl_easy_reset(_handle);
+    curl_easy_reset(this->_handle);
 
-    curl_easy_setopt(_handle, CURLOPT_URL, url.c_str());
-    curl_easy_setopt(_handle, CURLOPT_POSTFIELDS, data.c_str());
-    curl_easy_setopt(_handle, CURLOPT_WRITEFUNCTION, WriteCallback);
-    curl_easy_setopt(_handle, CURLOPT_WRITEDATA, &_responseBody);
-    curl_easy_setopt(_handle, CURLOPT_HTTPHEADER, headers);
+    curl_easy_setopt(this->_handle, CURLOPT_URL, url.c_str());
+    curl_easy_setopt(this->_handle, CURLOPT_POSTFIELDS, data.c_str());
+    curl_easy_setopt(this->_handle, CURLOPT_WRITEFUNCTION, WriteCallback);
+    curl_easy_setopt(this->_handle, CURLOPT_WRITEDATA, &_responseBody);
+    curl_easy_setopt(this->_handle, CURLOPT_HTTPHEADER, headers);
 
-    auto response = curl_easy_perform(_handle);
+    auto response = curl_easy_perform(this->_handle);
 
     curl_slist_free_all(headers);
+    
     if (response != CURLE_OK) 
     {
         std::cerr << curl_easy_strerror(response) << std::endl;

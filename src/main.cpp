@@ -33,7 +33,7 @@ int main()
             continue;
         }
 
-        // CLEAR THE BUFFER (Crucial step!)
+        //buff clean
         std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 
         if (choice == 3) {
