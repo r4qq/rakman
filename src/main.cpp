@@ -1,107 +1,104 @@
 #include <iostream>
-#include <limits>
 #include <nlohmann/json.hpp>
 #include <string>
+#include <getopt.h>
 
 #include "ReqManager.hpp"
 
-void printMenu()
-{
-    std::cout << "\n=== RAKMAN CLI ===" << std::endl;
-    std::cout << "1. Send GET Request" << std::endl;
-    std::cout << "2. Send POST Request" << std::endl;
-    std::cout << "3. Send DELETE Request" << std::endl;
-    std::cout << "4. Exit" << std::endl;
-    std::cout << "Select option: ";
-}
-
 inline void prettyPrint(const std::string &rawRes)
 {
-    auto jsonRes = nlohmann::json::parse(rawRes);
-    std::cout << jsonRes.dump(4) << std::endl;
+    if (nlohmann::json::accept(rawRes)) {
+        auto jsonRes = nlohmann::json::parse(rawRes);
+        std::cout << jsonRes.dump(4) << std::endl;
+    } else {
+        std::cout << rawRes << std::endl;
+    }
 }
 
-int main()
+void printHelp() {
+    std::cout << "Usage: rakman [OPTIONS]\n"
+              << "A lightweight CLI HTTP client.\n\n"
+              << "Options:\n"
+              << "  -h          Show this help message and exit\n"
+              << "  -m METHOD   HTTP Method (GET, POST, DELETE). Default: GET\n"
+              << "  -u URL      Target URL (Required)\n"
+              << "  -d DATA     JSON body for POST requests\n";
+}
+
+int main(int argc, char *argv[])
 {
     ReqManager  manager;
-    int         choice = 0;
+    
+    std::string method = "GET";
     std::string url;
     std::string body;
 
-    while (true) {
-        printMenu();
-        if (!(std::cin >> choice)) {
-            std::cout << "Invalid input. Please enter a number." << std::endl;
-            std::cin.clear();
-            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-            continue;
-        }
+    int opt;
 
-        // buff clean
-        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-
-        if (choice == 4) {
-            std::cout << "Exiting..." << std::endl;
-            break;
-        }
-
-        switch (choice) {
-        case 1: { // GET
-            manager.cleanResponseBody();
-            std::cout << "Enter URL: ";
-            std::getline(std::cin, url);
-            if (url.empty()) {
-                std::cerr << "Empty Url";
+    while ((opt = getopt(argc, argv, "hm:u:d:")) != -1) {
+        switch (opt) {
+            case 'h':
+                printHelp();
+                return 0;
+            case 'm':
+                method = optarg;
                 break;
-            }
-            if (!manager.sendGet(url)) {
-                std::cout << manager.getResponseBody() << std::endl;
+            case 'u':
+                url = optarg;
                 break;
-            }
-            prettyPrint(manager.getResponseBody());
-            break;
-        }
-        case 2: { // POST
-            manager.cleanResponseBody();
-            std::cout << "Enter URL: ";
-            std::getline(std::cin, url);
-            if (url.empty()) {
-                std::cerr << "Empty Url";
+            case 'd':
+                body = optarg;
                 break;
-            }
-            std::cout << "Enter JSON: ";
-            std::getline(std::cin, body);
-            if (!nlohmann::json::accept(body)) {
-                std::cerr << "JSON Invalid" << std::endl;
-                break;
-            }
-            if (!manager.sendPost(url, body)) {
-                std::cout << manager.getResponseBody() << std::endl;
-                break;
-            }
-            prettyPrint(manager.getResponseBody());
-            break;
-        }
-        case 3: {
-            manager.cleanResponseBody();
-            std::cout << "Enter Url: ";
-            std::getline(std::cin, url);
-            if (url.empty()) {
-                std::cerr << "Empty Url";
-                break;
-            }
-            if (!manager.sendDelete(url)) {
-                std::cout << manager.getResponseBody() << std::endl;
-                break;
-            }
-            prettyPrint(manager.getResponseBody());
-            break;
-        }
-        default:
-            manager.cleanResponseBody();
-            std::cout << "Unknown option." << std::endl;
-            break;
+            case '?':
+                return -1;
+            default:
+                return -1;
         }
     }
-    return 0;
+
+    if (url.empty()) {
+        std::cerr << "Error: URL is required. Use -u <url>\n";
+        return 1;
+    }
+
+    manager.cleanResponseBody();
+
+    if (method == "GET") {
+        if (!manager.sendGet(url)) {
+            std::cout << manager.getResponseBody() << "\n";
+            return 1;
+        } else {
+            prettyPrint(manager.getResponseBody());
+            return 0;
+        }
+    } 
+    else if (method == "POST") {
+        if (body.empty()) {
+            std::cerr << "Error: POST requests require a body. Use -d <body>\n";
+            return 1;
+        }
+        if (!nlohmann::json::accept(body)) {
+            std::cerr << "Error: Invalid JSON format.\n";
+            return 1;
+        }
+        if (!manager.sendPost(url, body)) {
+            std::cout << manager.getResponseBody() << "\n";
+            return 1;
+        } else {
+            prettyPrint(manager.getResponseBody());
+            return 0;
+        }    
+    }
+    else if (method == "DELETE") {
+        if (!manager.sendDelete(url)) {
+            std::cout << manager.getResponseBody() << "\n";
+        } else {
+            prettyPrint(manager.getResponseBody());
+            return 0;
+        }
+    } 
+    else {
+        std::cerr << "Error: Unsupported method '" << method << "'\n";
+        return 1;
+    }
 }
